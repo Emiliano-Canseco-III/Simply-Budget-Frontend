@@ -267,6 +267,33 @@ const icons = {
       <polyline points="19 12 12 19 5 12" />
     </svg>
   ),
+  edit: (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+    </svg>
+  ),
+  check: (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+      <polyline points="20 6 9 17 4 12" />
+    </svg>
+  ),
+  x: (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+      <line x1="18" y1="6" x2="6" y2="18" />
+      <line x1="6" y1="6" x2="18" y2="18" />
+    </svg>
+  ),
+  transactions: (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <line x1="8" y1="6" x2="21" y2="6" />
+      <line x1="8" y1="12" x2="21" y2="12" />
+      <line x1="8" y1="18" x2="21" y2="18" />
+      <line x1="3" y1="6" x2="3.01" y2="6" />
+      <line x1="3" y1="12" x2="3.01" y2="12" />
+      <line x1="3" y1="18" x2="3.01" y2="18" />
+    </svg>
+  ),
 };
 
 // ─── Styles ───────────────────────────────────────────────────────────────
@@ -523,6 +550,47 @@ const css = `
     transition: all 0.15s;
   }
   .btn-icon:hover { color: var(--red); background: var(--red-dim); }
+  .btn-icon-edit {
+    background: transparent; color: var(--text3); border: none; padding: 4px;
+    cursor: pointer; border-radius: 4px; display: inline-flex; transition: all 0.15s;
+  }
+  .btn-icon-edit:hover { color: var(--accent2); background: var(--accent-glow); }
+  .btn-icon-confirm {
+    background: transparent; color: var(--green); border: none; padding: 4px;
+    cursor: pointer; border-radius: 4px; display: inline-flex; transition: all 0.15s;
+  }
+  .btn-icon-confirm:hover { background: var(--green-dim); }
+  .btn-icon-cancel {
+    background: transparent; color: var(--text3); border: none; padding: 4px;
+    cursor: pointer; border-radius: 4px; display: inline-flex; transition: all 0.15s;
+  }
+  .btn-icon-cancel:hover { color: var(--red); background: var(--red-dim); }
+  .edit-input {
+    background: var(--surface3); border: 1px solid var(--accent); border-radius: 5px;
+    padding: 4px 8px; color: var(--text); font-family: 'Syne', sans-serif;
+    font-size: 13px; outline: none; width: auto;
+  }
+  .edit-input-sm { max-width: 100px; font-family: 'DM Mono', monospace; }
+
+  /* Filter bar & search */
+  .filter-bar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 16px; }
+  .filter-bar .form-input { padding: 7px 10px; font-size: 12px; }
+  .search-input {
+    background: var(--surface2); border: 1px solid var(--border2); border-radius: 7px;
+    padding: 7px 12px; color: var(--text); font-family: 'Syne', sans-serif;
+    font-size: 12px; outline: none; min-width: 200px; transition: border-color 0.15s;
+  }
+  .search-input:focus { border-color: var(--accent); }
+  .sort-btn {
+    background: transparent; border: 1px solid var(--border2); color: var(--text2);
+    padding: 7px 12px; border-radius: 7px; cursor: pointer;
+    font-family: 'DM Mono', monospace; font-size: 11px; transition: all 0.15s;
+  }
+  .sort-btn:hover { background: var(--surface2); color: var(--text); }
+  .sort-btn.active { border-color: var(--accent); color: var(--accent2); }
+
+  /* Donut chart */
+  .donut-row { display: flex; justify-content: space-around; align-items: flex-start; padding: 24px 16px; }
 
   /* Form */
   .form-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; }
@@ -767,8 +835,11 @@ function MonthPicker({ months, selected, onChange }) {
 
 function ProgressBar({ spent, limit, color = "var(--accent)" }) {
   const pct = limit > 0 ? Math.min((spent / limit) * 100, 100) : 0;
+  const remaining = limit - spent;
   const barColor =
     pct >= 100 ? "var(--red)" : pct >= 80 ? "var(--amber)" : color;
+  const remainColor =
+    remaining < 0 ? "var(--red)" : remaining < limit * 0.2 ? "var(--amber)" : "var(--green)";
   return (
     <div className="progress-wrap">
       <div className="progress-bar-bg">
@@ -778,8 +849,10 @@ function ProgressBar({ spent, limit, color = "var(--accent)" }) {
         />
       </div>
       <div className="progress-meta">
-        <span>${(limit - spent).toFixed(2)} left</span>
-        <span>{pct.toFixed(0)}%</span>
+        <span style={{ color: remainColor, fontWeight: 600 }}>
+          {remaining >= 0 ? `$${remaining.toFixed(2)} remaining` : `-$${Math.abs(remaining).toFixed(2)} over budget`}
+        </span>
+        <span>{pct.toFixed(0)}% used</span>
       </div>
     </div>
   );
@@ -794,6 +867,52 @@ function Modal({ title, onClose, children }) {
       <div className="modal">
         <div className="modal-title">{title}</div>
         {children}
+      </div>
+    </div>
+  );
+}
+
+// ─── DonutChart ──────────────────────────────────────────────────────────
+
+function DonutChart({ value, total, label, color, prevValue = null, size = 120, strokeWidth = 12 }) {
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const pct = total > 0 ? Math.min(value / total, 1) : 0;
+  const offset = circumference * (1 - pct);
+  const center = size / 2;
+
+  const change = prevValue !== null && prevValue > 0
+    ? ((value - prevValue) / prevValue) * 100
+    : null;
+
+  return (
+    <div style={{ textAlign: "center" }}>
+      <svg width={size} height={size} style={{ transform: "rotate(-90deg)" }}>
+        <circle
+          cx={center} cy={center} r={radius}
+          fill="none" stroke="var(--surface3)" strokeWidth={strokeWidth}
+        />
+        <circle
+          cx={center} cy={center} r={radius}
+          fill="none" stroke={color} strokeWidth={strokeWidth}
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+          strokeLinecap="round"
+          style={{ transition: "stroke-dashoffset 0.6s ease" }}
+        />
+      </svg>
+      <div style={{ marginTop: 8 }}>
+        <div style={{ fontFamily: "DM Mono, monospace", fontSize: 10, letterSpacing: "1px", color: "var(--text3)", textTransform: "uppercase" }}>
+          {label}
+        </div>
+        <div style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-0.5px", color, marginTop: 4 }}>
+          ${value.toFixed(2)}
+        </div>
+        {change !== null && (
+          <div style={{ fontFamily: "DM Mono, monospace", fontSize: 11, marginTop: 4, color: change >= 0 ? "var(--green)" : "var(--red)" }}>
+            {change >= 0 ? "+" : ""}{change.toFixed(1)}% vs last mo
+          </div>
+        )}
       </div>
     </div>
   );
@@ -873,57 +992,37 @@ function Dashboard({ data, setData }) {
         </div>
       </div>
 
-      <div className="grid4 section">
-        {[
-          {
-            label: "Total Income",
-            value: `$${totalIncome.toFixed(2)}`,
-            change: incomeChange,
-            color: "var(--green)",
-            positive: true,
-          },
-          {
-            label: "Total Spending",
-            value: `$${totalSpent.toFixed(2)}`,
-            change: spentChange,
-            color: "var(--red)",
-            positive: false,
-          },
-          {
-            label: "Net Balance",
-            value: `$${netBalance.toFixed(2)}`,
-            change: null,
-            color: netBalance >= 0 ? "var(--green)" : "var(--red)",
-            positive: netBalance >= 0,
-          },
-          {
-            label: "Transactions",
-            value: txs.length,
-            change: null,
-            color: "var(--accent2)",
-            positive: true,
-          },
-        ].map((s) => (
-          <div className="card" key={s.label}>
-            <div className="stat-label">{s.label}</div>
-            <div className="stat-value" style={{ color: s.color }}>
-              {s.value}
-            </div>
-            {s.change !== null && (
-              <div
-                className={`stat-change ${s.positive ? (s.change <= 0 ? "pos" : "neg") : s.change <= 0 ? "pos" : "neg"}`}
-              >
-                {s.change > 0 ? icons.arrowUp : icons.arrowDown}
-                {Math.abs(s.change).toFixed(1)}% vs last month
-              </div>
-            )}
-            {s.change === null && (
-              <div className="stat-change" style={{ color: "var(--text3)" }}>
-                vs {prevMk ? monthLabel(prevMk) : "—"}
-              </div>
-            )}
+      <div className="card section">
+        <div className="donut-row">
+          <DonutChart
+            value={totalIncome}
+            total={Math.max(totalIncome, totalSpent, 1)}
+            label="Total Income"
+            color="var(--green)"
+            prevValue={prevIncome > 0 ? prevIncome : null}
+          />
+          <DonutChart
+            value={totalSpent}
+            total={Math.max(totalIncome, totalSpent, 1)}
+            label="Total Spending"
+            color="var(--red)"
+            prevValue={prevSpent > 0 ? prevSpent : null}
+          />
+          <DonutChart
+            value={Math.abs(netBalance)}
+            total={Math.max(totalIncome, totalSpent, 1)}
+            label="Net Balance"
+            color={netBalance >= 0 ? "var(--green)" : "var(--red)"}
+          />
+        </div>
+        <div style={{ borderTop: "1px solid var(--border)", padding: "12px 16px", display: "flex", justifyContent: "space-around" }}>
+          <div style={{ textAlign: "center", fontFamily: "DM Mono, monospace", fontSize: 11, color: "var(--text3)" }}>
+            {txs.length} transactions
           </div>
-        ))}
+          <div style={{ textAlign: "center", fontFamily: "DM Mono, monospace", fontSize: 11, color: "var(--text3)" }}>
+            vs {prevMk ? monthLabel(prevMk) : "no prior month"}
+          </div>
+        </div>
       </div>
 
       <div className="section">
@@ -959,7 +1058,7 @@ function Dashboard({ data, setData }) {
                   </div>
                   <div
                     className="cat-amounts"
-                    style={{ marginLeft: 20, minWidth: 90 }}
+                    style={{ marginLeft: 20, minWidth: 110 }}
                   >
                     <div
                       className="cat-spent"
@@ -974,6 +1073,17 @@ function Dashboard({ data, setData }) {
                     </div>
                     <div className="cat-limit">
                       / ${(cat.monthlyLimit || 0).toFixed(2)}
+                    </div>
+                    <div style={{
+                      fontFamily: "DM Mono, monospace",
+                      fontSize: 10,
+                      fontWeight: 600,
+                      color: (cat.monthlyLimit || 0) - spent >= 0 ? "var(--green)" : "var(--red)",
+                      marginTop: 2,
+                    }}>
+                      {(cat.monthlyLimit || 0) - spent >= 0
+                        ? `$${((cat.monthlyLimit || 0) - spent).toFixed(2)} left`
+                        : `-$${Math.abs((cat.monthlyLimit || 0) - spent).toFixed(2)} over`}
                     </div>
                   </div>
                 </div>
@@ -1314,6 +1424,8 @@ function CategoryManager({
 }) {
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState({ name: "", monthlyLimit: "" });
+  const [editingId, setEditingId] = useState(null);
+  const [editForm, setEditForm] = useState({ name: "", monthlyLimit: "" });
   const allMonths = getAllMonths(data.transactions);
   const [selectedMonth, setSelectedMonth] = useState(currentMonthKey());
   const [showAddTx, setShowAddTx] = useState(false);
@@ -1336,6 +1448,28 @@ function CategoryManager({
 
   function removeCat(id) {
     setData((d) => ({ ...d, [catKey]: d[catKey].filter((c) => c.id !== id) }));
+  }
+
+  function startEdit(cat) {
+    setEditingId(cat.id);
+    setEditForm({ name: cat.name, monthlyLimit: String(cat.monthlyLimit) });
+  }
+
+  function saveEdit() {
+    if (!editForm.name.trim()) return;
+    setData((d) => ({
+      ...d,
+      [catKey]: d[catKey].map((c) =>
+        c.id === editingId
+          ? { ...c, name: editForm.name.trim(), monthlyLimit: parseFloat(editForm.monthlyLimit) || 0 }
+          : c
+      ),
+    }));
+    setEditingId(null);
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
   }
 
   function getCatSpent(catId) {
@@ -1435,46 +1569,76 @@ function CategoryManager({
                 }}
               >
                 <div className="flex justify-between items-center">
-                  <div>
-                    <div className="cat-name">{cat.name}</div>
-                    <div className="cat-meta">
-                      {catTxs.length} transaction
-                      {catTxs.length !== 1 ? "s" : ""} •{" "}
-                      {prevMk && diff !== 0 && (
-                        <span className={diff > 0 ? "neg" : "pos"}>
-                          {diff > 0 ? "+" : ""}${diff.toFixed(2)} vs{" "}
-                          {monthLabel(prevMk).split(" ")[0]}
-                        </span>
-                      )}
-                      {prevMk && diff === 0 && (
-                        <span style={{ color: "var(--text3)" }}>
-                          same as last month
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="cat-amounts">
-                      <div
-                        className="cat-spent"
-                        style={{
-                          color:
-                            spent > cat.monthlyLimit ? "var(--red)" : color,
-                        }}
-                      >
-                        ${spent.toFixed(2)}
+                  {editingId === cat.id ? (
+                    <>
+                      <div className="flex items-center gap-2">
+                        <input
+                          className="edit-input"
+                          value={editForm.name}
+                          onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))}
+                          onKeyDown={(e) => e.key === "Enter" && saveEdit()}
+                        />
+                        <input
+                          className="edit-input edit-input-sm"
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={editForm.monthlyLimit}
+                          onChange={(e) => setEditForm((f) => ({ ...f, monthlyLimit: e.target.value }))}
+                          onKeyDown={(e) => e.key === "Enter" && saveEdit()}
+                          placeholder="$0.00"
+                        />
                       </div>
-                      <div className="cat-limit">
-                        / ${cat.monthlyLimit.toFixed(2)}
+                      <div className="flex items-center gap-2">
+                        <button className="btn-icon-confirm" onClick={saveEdit}>{icons.check}</button>
+                        <button className="btn-icon-cancel" onClick={cancelEdit}>{icons.x}</button>
                       </div>
-                    </div>
-                    <button
-                      className="btn-icon"
-                      onClick={() => removeCat(cat.id)}
-                    >
-                      {icons.trash}
-                    </button>
-                  </div>
+                    </>
+                  ) : (
+                    <>
+                      <div>
+                        <div className="cat-name">{cat.name}</div>
+                        <div className="cat-meta">
+                          {catTxs.length} transaction
+                          {catTxs.length !== 1 ? "s" : ""} •{" "}
+                          {prevMk && diff !== 0 && (
+                            <span className={diff > 0 ? "neg" : "pos"}>
+                              {diff > 0 ? "+" : ""}${diff.toFixed(2)} vs{" "}
+                              {monthLabel(prevMk).split(" ")[0]}
+                            </span>
+                          )}
+                          {prevMk && diff === 0 && (
+                            <span style={{ color: "var(--text3)" }}>
+                              same as last month
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="cat-amounts">
+                          <div
+                            className="cat-spent"
+                            style={{
+                              color:
+                                spent > cat.monthlyLimit ? "var(--red)" : color,
+                            }}
+                          >
+                            ${spent.toFixed(2)}
+                          </div>
+                          <div className="cat-limit">
+                            / ${cat.monthlyLimit.toFixed(2)}
+                          </div>
+                        </div>
+                        <button className="btn-icon-edit" onClick={() => startEdit(cat)}>{icons.edit}</button>
+                        <button
+                          className="btn-icon"
+                          onClick={() => removeCat(cat.id)}
+                        >
+                          {icons.trash}
+                        </button>
+                      </div>
+                    </>
+                  )}
                 </div>
                 <ProgressBar
                   spent={spent}
@@ -1570,6 +1734,27 @@ function IncomePage({ data, setData }) {
     }));
   }
 
+  const [editingId, setEditingId] = useState(null);
+  const [editForm, setEditForm] = useState({ name: "" });
+
+  function startEdit(cat) {
+    setEditingId(cat.id);
+    setEditForm({ name: cat.name });
+  }
+
+  function saveEdit() {
+    if (!editForm.name.trim()) return;
+    setData((d) => ({
+      ...d,
+      incomeCategories: d.incomeCategories.map((c) =>
+        c.id === editingId ? { ...c, name: editForm.name.trim() } : c
+      ),
+    }));
+    setEditingId(null);
+  }
+
+  function cancelEdit() { setEditingId(null); }
+
   return (
     <div>
       <div className="page-header">
@@ -1659,26 +1844,46 @@ function IncomePage({ data, setData }) {
               const total = catTxs.reduce((s, t) => s + t.amount, 0);
               return (
                 <div className="cat-row" key={cat.id}>
-                  <div>
-                    <div className="cat-name">{cat.name}</div>
-                    <div className="cat-meta">
-                      {catTxs.length} deposit{catTxs.length !== 1 ? "s" : ""}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div
-                      className="tx-amount"
-                      style={{ color: "var(--green)" }}
-                    >
-                      +${total.toFixed(2)}
-                    </div>
-                    <button
-                      className="btn-icon"
-                      onClick={() => removeCat(cat.id)}
-                    >
-                      {icons.trash}
-                    </button>
-                  </div>
+                  {editingId === cat.id ? (
+                    <>
+                      <div className="flex items-center gap-2">
+                        <input
+                          className="edit-input"
+                          value={editForm.name}
+                          onChange={(e) => setEditForm({ name: e.target.value })}
+                          onKeyDown={(e) => e.key === "Enter" && saveEdit()}
+                        />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button className="btn-icon-confirm" onClick={saveEdit}>{icons.check}</button>
+                        <button className="btn-icon-cancel" onClick={cancelEdit}>{icons.x}</button>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div>
+                        <div className="cat-name">{cat.name}</div>
+                        <div className="cat-meta">
+                          {catTxs.length} deposit{catTxs.length !== 1 ? "s" : ""}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="tx-amount"
+                          style={{ color: "var(--green)" }}
+                        >
+                          +${total.toFixed(2)}
+                        </div>
+                        <button className="btn-icon-edit" onClick={() => startEdit(cat)}>{icons.edit}</button>
+                        <button
+                          className="btn-icon"
+                          onClick={() => removeCat(cat.id)}
+                        >
+                          {icons.trash}
+                        </button>
+                      </div>
+                    </>
+                  )}
                 </div>
               );
             })
@@ -1816,6 +2021,29 @@ function SavingsPage({ data, setData }) {
     }));
   }
 
+  const [editingId, setEditingId] = useState(null);
+  const [editForm, setEditForm] = useState({ name: "", targetAmount: "" });
+
+  function startEdit(goal) {
+    setEditingId(goal.id);
+    setEditForm({ name: goal.name, targetAmount: String(goal.targetAmount) });
+  }
+
+  function saveEdit() {
+    if (!editForm.name.trim()) return;
+    setData((d) => ({
+      ...d,
+      savingsGoals: d.savingsGoals.map((g) =>
+        g.id === editingId
+          ? { ...g, name: editForm.name.trim(), targetAmount: parseFloat(editForm.targetAmount) || 0 }
+          : g
+      ),
+    }));
+    setEditingId(null);
+  }
+
+  function cancelEdit() { setEditingId(null); }
+
   const totalSaved = data.savingsGoals.reduce((s, g) => s + g.currentAmount, 0);
   const totalTarget = data.savingsGoals.reduce((s, g) => s + g.targetAmount, 0);
 
@@ -1928,22 +2156,52 @@ function SavingsPage({ data, setData }) {
             return (
               <div className="goal-card" key={goal.id}>
                 <div className="goal-header">
-                  <div>
-                    <div className="goal-name">{goal.name}</div>
-                    <div className="cat-meta">
-                      {goalTxs.length} transfer{goalTxs.length !== 1 ? "s" : ""}{" "}
-                      this month
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="goal-pct">{pct.toFixed(0)}%</div>
-                    <button
-                      className="btn-icon"
-                      onClick={() => removeGoal(goal.id)}
-                    >
-                      {icons.trash}
-                    </button>
-                  </div>
+                  {editingId === goal.id ? (
+                    <>
+                      <div className="flex items-center gap-2">
+                        <input
+                          className="edit-input"
+                          value={editForm.name}
+                          onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))}
+                          onKeyDown={(e) => e.key === "Enter" && saveEdit()}
+                        />
+                        <input
+                          className="edit-input edit-input-sm"
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={editForm.targetAmount}
+                          onChange={(e) => setEditForm((f) => ({ ...f, targetAmount: e.target.value }))}
+                          onKeyDown={(e) => e.key === "Enter" && saveEdit()}
+                          placeholder="Target $"
+                        />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button className="btn-icon-confirm" onClick={saveEdit}>{icons.check}</button>
+                        <button className="btn-icon-cancel" onClick={cancelEdit}>{icons.x}</button>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div>
+                        <div className="goal-name">{goal.name}</div>
+                        <div className="cat-meta">
+                          {goalTxs.length} transfer{goalTxs.length !== 1 ? "s" : ""}{" "}
+                          this month
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="goal-pct">{pct.toFixed(0)}%</div>
+                        <button className="btn-icon-edit" onClick={() => startEdit(goal)}>{icons.edit}</button>
+                        <button
+                          className="btn-icon"
+                          onClick={() => removeGoal(goal.id)}
+                        >
+                          {icons.trash}
+                        </button>
+                      </div>
+                    </>
+                  )}
                 </div>
                 <div className="progress-bar-bg" style={{ height: 8 }}>
                   <div
@@ -2026,6 +2284,29 @@ function AccountsPage({ data, setData }) {
   function removeAcc(id) {
     setData((d) => ({ ...d, accounts: d.accounts.filter((a) => a.id !== id) }));
   }
+
+  const [editingId, setEditingId] = useState(null);
+  const [editForm, setEditForm] = useState({ name: "", balance: "" });
+
+  function startEdit(acc) {
+    setEditingId(acc.id);
+    setEditForm({ name: acc.name, balance: String(acc.balance) });
+  }
+
+  function saveEdit() {
+    if (!editForm.name.trim()) return;
+    setData((d) => ({
+      ...d,
+      accounts: d.accounts.map((a) =>
+        a.id === editingId
+          ? { ...a, name: editForm.name.trim(), balance: parseFloat(editForm.balance) || 0 }
+          : a
+      ),
+    }));
+    setEditingId(null);
+  }
+
+  function cancelEdit() { setEditingId(null); }
 
   function getAccTxs(accId) {
     return txs.filter((t) => t.accountId === accId || t.toAccountId === accId);
@@ -2112,13 +2393,43 @@ function AccountsPage({ data, setData }) {
           const accTxs = getAccTxs(acc.id);
           return (
             <div className="acc-card" key={acc.id}>
-              <div className="flex justify-between items-center mb-3">
-                <div className="acc-name">{acc.name}</div>
-                <button className="btn-icon" onClick={() => removeAcc(acc.id)}>
-                  {icons.trash}
-                </button>
-              </div>
-              <div className="acc-balance">${acc.balance.toFixed(2)}</div>
+              {editingId === acc.id ? (
+                <div className="flex-col gap-2" style={{ marginBottom: 12 }}>
+                  <div className="flex items-center gap-2">
+                    <input
+                      className="edit-input"
+                      value={editForm.name}
+                      onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))}
+                      onKeyDown={(e) => e.key === "Enter" && saveEdit()}
+                      placeholder="Account name"
+                    />
+                    <input
+                      className="edit-input edit-input-sm"
+                      type="number"
+                      step="0.01"
+                      value={editForm.balance}
+                      onChange={(e) => setEditForm((f) => ({ ...f, balance: e.target.value }))}
+                      onKeyDown={(e) => e.key === "Enter" && saveEdit()}
+                      placeholder="Balance"
+                    />
+                    <button className="btn-icon-confirm" onClick={saveEdit}>{icons.check}</button>
+                    <button className="btn-icon-cancel" onClick={cancelEdit}>{icons.x}</button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="flex justify-between items-center mb-3">
+                    <div className="acc-name">{acc.name}</div>
+                    <div className="flex items-center gap-2">
+                      <button className="btn-icon-edit" onClick={() => startEdit(acc)}>{icons.edit}</button>
+                      <button className="btn-icon" onClick={() => removeAcc(acc.id)}>
+                        {icons.trash}
+                      </button>
+                    </div>
+                  </div>
+                  <div className="acc-balance">${acc.balance.toFixed(2)}</div>
+                </>
+              )}
               <div style={{ marginTop: 12 }}>
                 <div className="section-title" style={{ marginBottom: 8 }}>
                   This Month ({accTxs.length} tx)
@@ -2185,6 +2496,125 @@ function AccountsPage({ data, setData }) {
   );
 }
 
+// ─── All Transactions Page ────────────────────────────────────────────────
+
+function AllTransactionsPage({ data, setData }) {
+  const [search, setSearch] = useState("");
+  const [filterType, setFilterType] = useState("all");
+  const [filterAccount, setFilterAccount] = useState("all");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [sortBy, setSortBy] = useState("date");
+  const [sortDir, setSortDir] = useState("desc");
+
+  let txs = [...data.transactions];
+
+  if (filterType !== "all") {
+    txs = txs.filter((t) => t.kind === filterType);
+  }
+  if (filterAccount !== "all") {
+    txs = txs.filter((t) => t.accountId === filterAccount || t.toAccountId === filterAccount);
+  }
+  if (dateFrom) {
+    txs = txs.filter((t) => t.date >= dateFrom);
+  }
+  if (dateTo) {
+    txs = txs.filter((t) => t.date <= dateTo);
+  }
+  if (search.trim()) {
+    const q = search.toLowerCase();
+    txs = txs.filter((t) => t.name.toLowerCase().includes(q));
+  }
+
+  txs.sort((a, b) => {
+    let cmp = 0;
+    if (sortBy === "date") cmp = new Date(a.date) - new Date(b.date);
+    else if (sortBy === "amount") cmp = a.amount - b.amount;
+    else if (sortBy === "name") cmp = a.name.localeCompare(b.name);
+    return sortDir === "desc" ? -cmp : cmp;
+  });
+
+  function toggleSort(field) {
+    if (sortBy === field) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    else { setSortBy(field); setSortDir("desc"); }
+  }
+
+  const totalFiltered = txs.reduce((s, t) => {
+    if (t.kind === "income") return s + t.amount;
+    if (t.kind === "transfer") return s;
+    return s - t.amount;
+  }, 0);
+
+  return (
+    <div>
+      <div className="page-header">
+        <div>
+          <div className="page-title">All Transactions</div>
+          <div className="page-subtitle">
+            {txs.length} of {data.transactions.length} transactions
+          </div>
+        </div>
+      </div>
+
+      <div className="card section">
+        <div className="filter-bar">
+          <input
+            className="search-input"
+            placeholder="Search by name..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          <select className="form-input" value={filterType} onChange={(e) => setFilterType(e.target.value)}>
+            <option value="all">All Types</option>
+            <option value="expense">Expense</option>
+            <option value="income">Income</option>
+            <option value="bill">Bill</option>
+            <option value="subscription">Subscription</option>
+            <option value="transfer">Transfer</option>
+            <option value="savings">Savings</option>
+          </select>
+          <select className="form-input" value={filterAccount} onChange={(e) => setFilterAccount(e.target.value)}>
+            <option value="all">All Accounts</option>
+            {data.accounts.map((a) => (
+              <option key={a.id} value={a.id}>{a.name}</option>
+            ))}
+          </select>
+          <input className="form-input" type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
+          <input className="form-input" type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
+        </div>
+
+        <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+          <button className={`sort-btn ${sortBy === "date" ? "active" : ""}`} onClick={() => toggleSort("date")}>
+            Date {sortBy === "date" ? (sortDir === "desc" ? "↓" : "↑") : ""}
+          </button>
+          <button className={`sort-btn ${sortBy === "amount" ? "active" : ""}`} onClick={() => toggleSort("amount")}>
+            Amount {sortBy === "amount" ? (sortDir === "desc" ? "↓" : "↑") : ""}
+          </button>
+          <button className={`sort-btn ${sortBy === "name" ? "active" : ""}`} onClick={() => toggleSort("name")}>
+            Name {sortBy === "name" ? (sortDir === "desc" ? "↓" : "↑") : ""}
+          </button>
+        </div>
+
+        <div style={{ borderTop: "1px solid var(--border)", paddingTop: 8, marginBottom: 8, fontFamily: "DM Mono, monospace", fontSize: 11, color: "var(--text3)" }}>
+          Net: <span style={{ color: totalFiltered >= 0 ? "var(--green)" : "var(--red)", fontWeight: 600 }}>
+            {totalFiltered >= 0 ? "+" : ""}${totalFiltered.toFixed(2)}
+          </span>
+        </div>
+      </div>
+
+      <div className="card">
+        {txs.length === 0 ? (
+          <div className="empty-state">No transactions match your filters</div>
+        ) : (
+          txs.map((tx) => (
+            <TxRow key={tx.id} tx={tx} data={data} setData={setData} />
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ─── Main App ──────────────────────────────────────────────────────────────
 
 const TABS = [
@@ -2201,6 +2631,7 @@ const TABS = [
   { id: "savings", label: "Savings", icon: "savings", group: "money" },
   { id: "accounts", label: "Accounts", icon: "accounts", group: "money" },
   { id: "aggregate", label: "Aggregate", icon: "aggregate", group: "reports" },
+  { id: "transactions", label: "Transactions", icon: "transactions", group: "reports" },
 ];
 
 export default function App() {
@@ -2287,6 +2718,9 @@ export default function App() {
           {tab === "accounts" && <AccountsPage data={data} setData={setData} />}
           {tab === "aggregate" && (
             <AggregatePage data={data} setData={setData} />
+          )}
+          {tab === "transactions" && (
+            <AllTransactionsPage data={data} setData={setData} />
           )}
         </main>
       </div>
